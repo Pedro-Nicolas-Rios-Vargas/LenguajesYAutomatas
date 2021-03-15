@@ -39,17 +39,19 @@ public class LineDebug {
                 } else {    //the string begin's
                     charInString = true;
                 }
-            } else if(c == 32) {    // A space character marks the end of a key word,
-                                    // but is not necessary more than 1.
-                if(blank) {  //When the flag blank is true is not necessary append other blank.
-                    continue;
-                } else {
+            } else if(!charInString) {
+                if (c == 32) {    // A space character marks the end of a key word,
+                    // but is not necessary more than 1.
+                    if (blank) {  //When the flag blank is true is not necessary append other blank.
+                        continue;
+                    } else {
+                        blank = true;
+                        continue;
+                    }
+                } else if (c == 9) {
                     blank = true;
                     continue;
                 }
-            } else if(c == 9) {
-                blank = true;
-                continue;
             }
 
             if(blank) {
