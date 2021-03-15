@@ -8,7 +8,7 @@
 *       (ab)^+a U ba^+b
 * */
 
-package src.ProcesadorDeLenguaje;
+package src.procesadordelenguaje;
 
 public class Procesador {
     private int[][] tableau;

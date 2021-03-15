@@ -1,4 +1,4 @@
-package src.ProcesadorDeLenguaje;
+package src.procesadordelenguaje;
 
 import java.util.HashMap;
 

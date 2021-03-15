@@ -1,4 +1,4 @@
-package src.PrefijoYSufijo;
+package src.prefijoysufijo;
 
 public class Main {
 

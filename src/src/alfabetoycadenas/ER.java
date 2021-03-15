@@ -1,4 +1,4 @@
-package src.AlfabetoYCadenas;
+package src.alfabetoycadenas;
 
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;

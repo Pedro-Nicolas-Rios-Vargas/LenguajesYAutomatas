@@ -1,4 +1,4 @@
-package src.PrefijoYSufijo;
+package src.prefijoysufijo;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
