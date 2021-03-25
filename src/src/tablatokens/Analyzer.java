@@ -94,6 +94,12 @@ public class Analyzer {
                 sb.append(actualChar);
                 continue;
             }
+            //=============================================================
+            //
+            //                          FALTA
+            //
+            //=============================================================
+            // Se debe verificar la entrada de valores numericos (enteros, flotantes, logaritmicos)
 
             if(sb.length() == 1) {
                 char single = sb.charAt(0);
@@ -157,16 +163,7 @@ public class Analyzer {
                         tokens.add(new Token(lexema, lexema, "-"));
                         sb.delete(0, sb.length());
                     } else if (isVariable(lexema)) {
-                        //=============================================================
-                        //
-                        //                          FALTA
-                        //
-                        //=============================================================
-                        // Se debe buscar la variable dentro de la tabla de tokens
-                        // en caso de encontrarse el token vuelve a ser ingresado con el mismo atributo.
-                        //
-                        // Si la variable no esta registrada en la tabla de tokens y el ultimo token
-                        // ingresado no es un tipo (cadena, ent, float, doble) generar un error.
+
                         Token token = null;
                         for (Token t : TOKENS_TABLE) {
                             if (t.getLexema().equals(lexema)) {
