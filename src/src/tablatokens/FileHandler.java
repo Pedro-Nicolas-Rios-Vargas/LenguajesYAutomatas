@@ -1,11 +1,9 @@
 package src.tablatokens;
 
 import src.datastructures.Queue;
+import src.tablatokens.data.Line;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.IOException;
 import java.io.File;
 import java.io.FileReader;

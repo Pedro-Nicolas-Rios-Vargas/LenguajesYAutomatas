@@ -1,6 +1,8 @@
 package src.tablatokens;
 
 import src.datastructures.Queue;
+import src.tablatokens.data.Line;
+import src.tablatokens.data.Token;
 
 import java.util.LinkedList;
 import java.util.Formatter;
@@ -24,7 +26,7 @@ public class TablaTokens {
         BR = new BufferedReader(new InputStreamReader(System.in));
         BW = new BufferedWriter(new OutputStreamWriter(System.out));
         TOKENS_TABLE = new LinkedList<>();
-        analyzer = new Analyzer();
+        analyzer = new Analyzer(TOKENS_TABLE);
         DEBUG_PATH = System.getProperty("user.dir") + "\\Depurado\\";
         LINES = FileHandler.readFile(new File(DEBUG_PATH + fileName));
     }
@@ -38,8 +40,8 @@ public class TablaTokens {
 
     public void printTablaTokens() {
         try {
-            BW.write(new Formatter().format("%s %40s %40s\n", "LEXEMA", "TOKEN", "ATRIBUTOS").toString());
-            BW.write("-".repeat(100));
+            BW.write(new Formatter().format("%s%40s%40s\n", "LEXEMA", "TOKEN", "ATRIBUTOS").toString());
+            BW.write("-".repeat(100) + "\n");
             BW.flush();
             for(Token t : TOKENS_TABLE) {
                 BW.write(t.toString());

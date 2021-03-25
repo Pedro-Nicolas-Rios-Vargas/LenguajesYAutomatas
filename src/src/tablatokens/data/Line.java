@@ -1,4 +1,4 @@
-package src.tablatokens;
+package src.tablatokens.data;
 
 public class Line {
     private int lineNumber;

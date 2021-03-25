@@ -1,4 +1,4 @@
-package src.tablatokens;
+package src.tablatokens.data;
 
 public class Token {
     private String lexema;
@@ -37,6 +37,12 @@ public class Token {
 
     @Override
     public String toString() {
-        return String.format("%s %40s %40s\n", lexema, token, atrib);
+        int spacesBtwColumns = 40;
+        int lexemaLength = lexema.length();
+        int tokenLength = token.length();
+        String whiteSpacesLexema = " ".repeat(Math.abs(spacesBtwColumns - lexemaLength));
+        String whiteSpacesToken = " ".repeat(Math.abs(spacesBtwColumns - tokenLength));
+
+        return String.format("%s %s %s %s %s\n", lexema, whiteSpacesLexema, token, whiteSpacesToken, atrib);
     }
 }

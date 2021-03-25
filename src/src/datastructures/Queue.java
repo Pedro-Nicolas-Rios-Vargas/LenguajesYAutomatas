@@ -72,7 +72,7 @@ public class Queue<T> implements IQueue<T>, Iterable<T>{
 
         @Override
         public boolean hasNext() {
-            if(ptr.next != null)
+            if(ptr != null)
                 return true;
             return false;
         }
