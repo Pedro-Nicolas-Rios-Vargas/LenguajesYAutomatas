@@ -1,12 +1,16 @@
 package src.datastructures;
 
-public class Queue<T> implements IQueue<T>{
+import java.lang.Iterable;
+import java.util.Iterator;
+
+public class Queue<T> implements IQueue<T>, Iterable<T>{
     private DataNode<T> head;
     private DataNode<T> tail;
+    private DataNode<T> ptr;
     private int size;
 
     public Queue() {
-        this.head = this.tail = null;
+        this.ptr = this.head = this.tail = null;
         this.size = 0;
     }
 
@@ -52,5 +56,37 @@ public class Queue<T> implements IQueue<T>{
 
     public void arrayToQueue(T array) {
         
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new QueueIterator();
+    }
+
+    private class QueueIterator implements Iterator<T> {
+        private DataNode<T> ptr;
+
+        public QueueIterator() {
+            this.ptr = head;
+        }
+
+        @Override
+        public boolean hasNext() {
+            if(ptr.next != null)
+                return true;
+            return false;
+        }
+
+        @Override
+        public T next() {
+            T data = ptr.data;
+            ptr = ptr.next;
+            return data;
+        }
+
+        @Override
+        public void remove() {
+
+        }
     }
 }
