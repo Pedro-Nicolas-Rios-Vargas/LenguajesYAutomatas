@@ -55,23 +55,22 @@ public class Analyzer {
         };
         /*
 
-        opL = new String[] {
+        Logic operators
                 "<",
                 ">",
                 "<=",
                 ">=",
                 "==",
                 "!="
-        };
-        asig = new String[] {
+                
+        asignation
                 ":="
-        };
-        op = new String[] {
+
+        arithmetic operators
                 "+",
                 "-",
                 "*",
                 "/"
-        };
 
          */
     }
@@ -107,17 +106,8 @@ public class Analyzer {
                 sb.append(actualChar);
                 continue;
             }
-            //=============================================================
-            //
-            //                          FALTA
-            //
-            //=============================================================
-            // Se debe verificar la entrada de valores numericos (enteros, flotantes, logaritmicos).
-            // Despues de ingresar un numero, este solo puede ser seguido por otro numero, un punto, un exponente
-            // para agregar valor al numero ingresado.
-            // Pero un numero termina cuando el siguiente caracter despues de este es un espacio en blanco o un
-            // operador aritmetico.
-            //
+
+            //VERIFICACION NUMERO
             if(numberFlag || exponentFlag) {
 
                 if (numberFlag) {
