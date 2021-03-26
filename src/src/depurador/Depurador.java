@@ -3,26 +3,32 @@ package src.depurador;
 import src.datastructures.Queue;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 
 public class Depurador {
     private Queue<String> lines;
     private final String MAIN_PATH;
-    private final String FILE_NAME;
+    private final String RAW_FILE_NAME;
     private final String CODE_PATH = "Codigo\\";
     private final String DEBUG_PATH = "Depurado\\";
     private final String LANG_TYPE = ".ordev";
     private final String DEBUG_TYPE = ".ordep";
 
-    public Depurador(String fileName) {
+    public Depurador(String fileName) throws FileNotFoundException {
         lines = new Queue<>();
         MAIN_PATH = System.getProperty("user.dir") + "\\";
-        this.FILE_NAME = fileName;
+        this.RAW_FILE_NAME = fileName;
         debug();
     }
 
-    private void debug() {
-        File f2r = new File(MAIN_PATH + CODE_PATH + FILE_NAME + LANG_TYPE);
-        File f2w = new File(MAIN_PATH + DEBUG_PATH + FILE_NAME + DEBUG_TYPE);
+    private void debug() throws FileNotFoundException {
+        String[] fileNameComponents = RAW_FILE_NAME.split("[.]");
+        String fileName = fileNameComponents[0];
+        if(!fileNameComponents[1].equals("ordev"))
+            throw new FileNotFoundException("El archivo no es de tipo: " + LANG_TYPE);
+
+        File f2r = new File(MAIN_PATH + CODE_PATH + RAW_FILE_NAME);
+        File f2w = new File(MAIN_PATH + DEBUG_PATH + fileName + DEBUG_TYPE);
         lines = FileHandler.readFile(f2r);
         FileHandler.writeFile(f2w, debuggingCode());
     }

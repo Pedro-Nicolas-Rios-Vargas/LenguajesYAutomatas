@@ -28,10 +28,14 @@ public class TablaTokens {
     }
 
     public void fillingTheTable() {
-        for(Line line : LINES) {
-            TOKENS_TABLE.addAll(analyzer.tokenizingLine(line));
+        try {
+            for (Line line : LINES) {
+                TOKENS_TABLE.addAll(analyzer.tokenizingLine(line));
+            }
+            printTablaTokens();
+        } catch(SyntaxException sE) {
+                sE.printStackTrace();
         }
-        printTablaTokens();
     }
 
     public void printTablaTokens() {

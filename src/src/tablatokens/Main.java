@@ -1,7 +1,18 @@
 package src.tablatokens;
 
+import src.depurador.Depurador;
+
+import java.io.FileNotFoundException;
+
 public class Main {
     public static void main(String[] args) {
-        new TablaTokens("codigo2.ordep").fillingTheTable();
+        String fileName = "ingresos";
+        try {
+            new Depurador(fileName + ".ordev");
+            new TablaTokens( fileName + ".ordep").fillingTheTable();
+        } catch(FileNotFoundException fNFE) {
+            fNFE.printStackTrace();
+        }
+
     }
 }
