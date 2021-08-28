@@ -52,4 +52,8 @@ public class TablaTokens {
 
         }
     }
+
+    public LinkedList<Token> getTokensTable() {
+        return TOKENS_TABLE;
+    }
 }

@@ -65,7 +65,7 @@ public class Analyzer {
                 
         asignation
                 ":="
-
+                
         arithmetic operators
                 "+",
                 "-",
