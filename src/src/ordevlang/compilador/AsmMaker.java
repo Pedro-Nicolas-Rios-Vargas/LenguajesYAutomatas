@@ -18,7 +18,7 @@ public class AsmMaker {
     private LinkedList<String> codigoAllocations;
 
     public AsmMaker(String fileName) throws IOException {
-        PATH = System.getProperty("user.dir") + "\\Compilado\\" + fileName + ".asm";
+        PATH = "D:\\masm\\compilador\\" + fileName + ".asm";
         BF = new BufferedWriter(new FileWriter(PATH));
         SALTO_LN = System.lineSeparator();
     }
@@ -37,6 +37,7 @@ public class AsmMaker {
         try {
             BF.flush();
             BF.close();
+            System.out.println("\nSe creo el archivo en la ruta: " + PATH);
         } catch (IOException ioE) {
             System.out.println("Error escribiendo el archivo asm. " + ioE.getMessage());
         }

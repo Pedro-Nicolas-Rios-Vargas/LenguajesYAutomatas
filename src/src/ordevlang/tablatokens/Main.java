@@ -12,6 +12,8 @@ public class Main {
             new TablaTokens( fileName + ".ordep").fillingTheTable();
         } catch(FileNotFoundException fNFE) {
             fNFE.printStackTrace();
+        } catch (SyntaxException sE) {
+            sE.printStackTrace();
         }
 
     }

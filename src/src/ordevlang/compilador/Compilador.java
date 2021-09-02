@@ -47,12 +47,18 @@ public class Compilador {
         String varDirective = "";
         String line = "";
         Variable varDeclarated = null;
+        int printCount = 1;
         AsmMaker asmBuilder = null;
         try {
             asmBuilder = new AsmMaker(fileName);
         } catch (IOException ioE) {
             System.out.println("Hoal " + ioE.getMessage());
         }
+        codeLines.add("mov bx, 0h");
+        codeLines.add("mov dx, 184Fh");
+        codeLines.add("clear_Screen bx,dx");
+        codeLines.add("mov dx, 0h");
+        codeLines.add("point_Cursor dh, dl");
 
         while(!tokenTable.isEmpty()) {
             token = tokenTable.remove();
@@ -77,6 +83,14 @@ public class Compilador {
             if (flagImpri && varDeclarated != null) {
                 line += varDeclarated.getVarID();
                 codeLines.add(line);
+
+                String hexCount = Integer.toHexString(printCount);
+                String dhValue = (hexCount.length() == 2) ? hexCount : "0".repeat(2 - hexCount.length()) + hexCount;
+                codeLines.add("mov dh, " + dhValue + "h");
+                codeLines.add("mov dl, 00");
+                codeLines.add("point_Cursor dh, dl");
+                printCount++;
+
                 flagImpri = false;
                 varDeclarated = null;
             }
@@ -90,36 +104,6 @@ public class Compilador {
 
         asmBuilder.initBuildFile();
 
-
-        //while (!tokenTable.isEmpty()) {
-        //    token = tokenTable.remove();
-        //    lexema = token.getLexema();
-        //    tokenType = token.getToken();
-        //    atrib = token.getAtrib();
-        //    // Cuando el compilador recibe la orden de imprimir va a esperar
-        //    // en el siguiente token el attrib de la variable o la declaración
-        //    // explicita de un arreglo/cadena de caracteres (String).
-        //    if (isVariableDeclaration(tokenType)) {
-        //        String[] varValues = varNameGenerator(tokenType, atrib);
-        //        varName = varValues[0];
-        //        varDirective = varValues[1];
-        //        Variable decVar = new Variable(varName, varDirective);
-        //        variables.put(atrib, decVar);
-        //        flagDeclarationVar = true;
-        //    }
-
-        //    if (flagImpri) {
-        //        flagImpri = false;
-        //        line += varName; // Se agrega el nombre de la variable al print command
-        //        codeLines.add(line);
-        //    }
-
-        //    if (tokenType.equals("impri")) {
-        //        flagImpri = true;
-        //        line = "imp_cad ";
-        //    }
-
-        //}
     }
 
     private boolean isVariableDeclaration(String tokenValue) {

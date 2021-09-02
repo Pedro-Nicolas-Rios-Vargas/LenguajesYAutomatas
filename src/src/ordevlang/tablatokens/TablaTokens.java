@@ -27,15 +27,11 @@ public class TablaTokens {
         LINES = FileHandler.readFile(new File(DEBUG_PATH + fileName));
     }
 
-    public void fillingTheTable() {
-        try {
-            for (Line line : LINES) {
-                TOKENS_TABLE.addAll(analyzer.tokenizingLine(line));
-            }
-            printTablaTokens();
-        } catch(SyntaxException sE) {
-                sE.printStackTrace();
+    public void fillingTheTable() throws SyntaxException {
+        for (Line line : LINES) {
+            TOKENS_TABLE.addAll(analyzer.tokenizingLine(line));
         }
+        printTablaTokens();
     }
 
     public void printTablaTokens() {
