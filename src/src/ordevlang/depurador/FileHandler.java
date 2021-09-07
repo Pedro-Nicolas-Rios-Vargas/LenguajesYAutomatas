@@ -22,7 +22,6 @@ public class FileHandler {
                 line = br.readLine();
                 formattedLine = LineDebug.StartOfLineValidation(line);
                 if(!formattedLine.isEmpty()) {
-                    // TODO: Se puede simplificar este proceso con un objeto
                     lines.enqueue(lineNumber + " " + formattedLine);
                     //System.out.println(formattedLine);
                 }

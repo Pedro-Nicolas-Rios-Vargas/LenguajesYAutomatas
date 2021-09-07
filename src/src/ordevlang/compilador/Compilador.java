@@ -1,6 +1,5 @@
 package src.ordevlang.compilador;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 
 import java.io.IOException;
@@ -10,47 +9,47 @@ import src.ordevlang.tablatokens.data.Token;
 
 public class Compilador {
 
-    private LinkedList<Token> tokenTable;
+    private final LinkedList<Token> tokenTable;
 
-    private LinkedList<String> stackVars;
-    private LinkedList<String> extraVars;
-    private LinkedList<String> dataVars;
-    private LinkedList<String> codeLines;
-    private int floatVarCount;
-    private int entVarCount;
-    private int dobleVarCount;
-    private int cadenaVarCount;
+    private final LinkedList<String> stackVars;
+    private final LinkedList<String> extraVars;
+    private final LinkedList<String> dataVars;
+    private final LinkedList<String> codeLines;
+    private Variable varDeclarated;
     private boolean flagImpri;
     private boolean flagDeclarationVar; // The compiler detects a declaration an are waiting for the value
+    private boolean flagInitializeVar;
+    private boolean flagLeer;
+    private int printCount;
+    private String line;
+    private String directive;
+    private String space;
 
     public Compilador(LinkedList<Token> tokenTable) {
         this.tokenTable = tokenTable;
-        this.floatVarCount = 0;
-        this.entVarCount = 0;
-        this.dobleVarCount = 0;
-        this.cadenaVarCount = 0;
+        this.line = "";
+        this.directive = "";
+        this.space = "";
+        this.printCount = 1;
 
         this.stackVars = new LinkedList<>();
         this.extraVars = new LinkedList<>();
         this.dataVars = new LinkedList<>();
         this.codeLines = new LinkedList<>();
+        this.varDeclarated = null;
 
-        this.flagImpri = false;
+        this.flagInitializeVar = false;
         this.flagDeclarationVar = false;
+        this.flagImpri = false;
+        this.flagLeer = false;
     }
 
-    public void compilar(String fileName) {
-        HashMap<String, Variable> variables = new HashMap<>();
+    public void compilar(String fileName, boolean inTest) {
         Token token;
         String lexema, tokenType, attrib;
-        String varName = "";
-        String varDirective = "";
-        String line = "";
-        Variable varDeclarated = null;
-        int printCount = 1;
         AsmMaker asmBuilder = null;
         try {
-            asmBuilder = new AsmMaker(fileName);
+            asmBuilder = new AsmMaker(fileName, inTest);
         } catch (IOException ioE) {
             System.out.println("Hoal " + ioE.getMessage());
         }
@@ -66,34 +65,18 @@ public class Compilador {
             tokenType = token.getToken();
             attrib = token.getAtrib();
 
-            if (tokenType.equals("impri")) {
-                line = "imp_cad ";
-                flagImpri = true;
+            if(isVariableDeclaration(tokenType) || flagDeclarationVar) {
+                defineVariable(tokenType, lexema);
             }
 
-            if (tokenType.equals("literal")) {
-                varName = "v" + attrib;
-                StringBuilder sb = new StringBuilder(lexema);
-                sb.insert(sb.length() - 1,'$');
-                lexema = sb.toString();
-                dataVars.add(varName + " db " + lexema);
-                varDeclarated = new Variable(varName, "db");
+            if (tokenType.equals("leer") || flagLeer) {
+                defineLeer(tokenType, lexema);
             }
 
-            if (flagImpri && varDeclarated != null) {
-                line += varDeclarated.getVarID();
-                codeLines.add(line);
-
-                String hexCount = Integer.toHexString(printCount);
-                String dhValue = (hexCount.length() == 2) ? hexCount : "0".repeat(2 - hexCount.length()) + hexCount;
-                codeLines.add("mov dh, " + dhValue + "h");
-                codeLines.add("mov dl, 00");
-                codeLines.add("point_Cursor dh, dl");
-                printCount++;
-
-                flagImpri = false;
-                varDeclarated = null;
+            if (tokenType.equals("impri") || flagImpri) {
+                defineImpri(tokenType, lexema, attrib);
             }
+
 
         }
         assert asmBuilder != null;
@@ -106,39 +89,114 @@ public class Compilador {
 
     }
 
-    private boolean isVariableDeclaration(String tokenValue) {
-        if (LangKeyWords.isDataType(tokenValue)) {
-            return true;
+    private void defineVariable(String tokenType, String lexema) {
+        if (isVariableDeclaration(tokenType)) {
+            directiveGenerator(tokenType);
+            flagDeclarationVar = true;
+        } else if (tokenType.equals("Id")) {
+            line = lexema + directive;
+        } else if (tokenType.equals("asign")) {
+            flagInitializeVar = true;
+        } else if (flagInitializeVar) {
+            if (isInitializationOfVariable(tokenType)) {
+                line += lexema;
+                StringBuilder sb = new StringBuilder(line);
+                sb.insert(sb.length() - 1, '$');
+                line = sb.toString();
+                dataVars.add(line);
+                flagInitializeVar = false;
+                flagDeclarationVar = false;
+            }
+        }else if (flagDeclarationVar) {
+            line += space;
+            dataVars.add(line);
+            flagDeclarationVar = false;
         }
-        return false;
+    }
+
+    private void defineImpri(String tokenType, String lexema, String attrib) {
+        if (tokenType.equals("impri")) {
+            line = "imp_cad ";
+            flagImpri = true;
+        } else if (tokenType.equals("literal")) {
+            // TODO: Refactor this code with define Variable code
+            String varName;
+            varName = "v" + attrib;
+            StringBuilder sb = new StringBuilder(lexema);
+            sb.insert(sb.length() - 1,'$');
+            lexema = sb.toString();
+            dataVars.add(varName + " db " + lexema);
+            varDeclarated = new Variable(varName, "db");
+        } else if (tokenType.equals("Id")) {
+            // TODO: Give a real directive to this variable obj declaration
+            line = "imp_var ";
+            varDeclarated = new Variable(lexema, "db");
+        }
+
+        if (flagImpri && varDeclarated != null) {
+            line += varDeclarated.getVarID();
+            codeLines.add(line);
+
+            moveCursor();
+
+            flagImpri = false;
+            varDeclarated = null;
+        }
+    }
+
+    private void moveCursor() {
+        String hexCount = Integer.toHexString(printCount);
+        String dhValue = (hexCount.length() == 2) ? hexCount : "0".repeat(2 - hexCount.length()) + hexCount;
+        codeLines.add("mov dh, " + dhValue + "h");
+        codeLines.add("mov dl, 00");
+        codeLines.add("point_Cursor dh, dl");
+        printCount++;
+    }
+
+    private void defineLeer(String tokenType, String lexema) {
+        if (tokenType.equals("leer")) {
+            line = "read_Cad ";
+            flagLeer = true;
+        } else if (tokenType.equals("Id")) {
+            varDeclarated = new Variable(lexema, "db");
+        }
+
+        if (flagLeer && varDeclarated != null) {
+            line += varDeclarated.getVarID();
+            codeLines.add(line);
+            line = String.format("fix_Read %s", varDeclarated.getVarID());
+            codeLines.add(line);
+
+            moveCursor();
+
+            flagLeer = false;
+            varDeclarated = null;
+        }
+    }
+
+    private boolean isVariableDeclaration(String tokenValue) {
+        return LangKeyWords.isDataType(tokenValue);
     }
 
     private boolean isInitializationOfVariable(String tokenValue) {
-        if (tokenValue.equals("number") || tokenValue.equals("literal")) {
-            return true;
-        }
-        return false;
+        return tokenValue.equals("number") || tokenValue.equals("literal");
     }
 
-    private String[] varNameGenerator(String tokenValue, String attrib) {
-        String varID = "v" + attrib;
-        String directive = "";
-        boolean isLiteral = tokenValue.equals("literal");
-        if (tokenValue.equals("ent")) {
-            directive = "db";
+    private void directiveGenerator(String tokenValue) {
+        if (tokenValue.equals("ent") || tokenValue.equals("float") || tokenValue.equals("doble")) {
+            if (tokenValue.equals("doble"))
+                directive = " dw ";
+            else
+                directive = " db ";
 
-        } else if(tokenValue.equals("float")) {
-            directive = "db";
-        } else if(tokenValue.equals("doble")) {
-            directive = "dw";
-        } else if(tokenValue.equals("cadena") || isLiteral) {
-            directive = "db";
+            space = "6, ?, 6 dup(?)";
+        } else if(tokenValue.equals("cadena")) {
+            directive = " db ";
+            space = "21, ?, 21 dup(?)";
         }
-
-        return new String[]{varID, directive, Boolean.toString(isLiteral)};
     }
 
-    class Variable {
+    static class Variable {
         String varID;
         String directive;
         String content;

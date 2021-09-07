@@ -7,7 +7,12 @@ import java.io.FileNotFoundException;
 
 public class Main {
     public static void main(String[] args) {
-        String fileName = "print";
+        // TODO: Fix the print error in DosBox.
+        //  Solution a) make a LEA read +2 for skip the descriptive bytes.
+        //  Solution b) make a macro for fix this.
+        //  Solution c) make a loop that print every character in the variable. (NOT RECOMMENDED)
+        //  Solution d) change the existing macros (NOT RECOMMENDED).
+        String fileName = "input";
         TablaTokens tokensTable;
         Compilador compi;
         try {
@@ -15,7 +20,7 @@ public class Main {
             tokensTable = new TablaTokens( fileName + ".ordep");
             tokensTable.fillingTheTable();
             compi = new Compilador(tokensTable.getTokensTable());
-            compi.compilar(fileName);
+            compi.compilar(fileName, false);
         } catch(FileNotFoundException fNFE) {
             fNFE.printStackTrace();
         } catch (SyntaxException sE) {

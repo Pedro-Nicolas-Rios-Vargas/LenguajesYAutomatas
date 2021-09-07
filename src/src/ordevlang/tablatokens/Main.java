@@ -6,7 +6,7 @@ import java.io.FileNotFoundException;
 
 public class Main {
     public static void main(String[] args) {
-        String fileName = "print";
+        String fileName = "ingresos";
         try {
             new Depurador(fileName + ".ordev");
             new TablaTokens( fileName + ".ordep").fillingTheTable();

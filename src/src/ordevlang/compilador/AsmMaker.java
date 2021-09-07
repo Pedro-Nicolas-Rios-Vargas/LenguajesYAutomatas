@@ -17,16 +17,19 @@ public class AsmMaker {
     private LinkedList<String> datosAllocations;
     private LinkedList<String> codigoAllocations;
 
-    public AsmMaker(String fileName) throws IOException {
-        PATH = "D:\\masm\\compilador\\" + fileName + ".asm";
+    public AsmMaker(String fileName, boolean inTest) throws IOException {
+        if (inTest)
+            PATH = System.getProperty("user.dir") + "\\Compilado\\" + fileName + ".asm";
+        else
+            PATH = "D:\\masm\\compilador\\" + fileName + ".asm";
         BF = new BufferedWriter(new FileWriter(PATH));
         SALTO_LN = System.lineSeparator();
     }
 
     public void initBuildFile() {
-        // TODO: Invoke here the four segments builders
         try {
             addLine("include bBasic.inc");
+            addLine("include bMacroU4.inc");
         } catch (IOException ioE) {
             System.out.println("Error construyendo el documento asm." + ioE.getMessage());
         }
