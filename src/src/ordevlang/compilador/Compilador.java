@@ -90,6 +90,8 @@ public class Compilador {
     }
 
     private void defineVariable(String tokenType, String lexema) {
+        // TODO: Problema, cuando la variable solo es declarada (no inicializada) no se ejecuta el codigo para
+        //      agregar al segmento de datos la variable sin inicializar.
         if (isVariableDeclaration(tokenType)) {
             directiveGenerator(tokenType);
             flagDeclarationVar = true;
