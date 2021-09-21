@@ -7,7 +7,7 @@ import java.io.FileNotFoundException;
 
 public class Main {
     public static void main(String[] args) {
-        String fileName = "input";
+        String fileName = "operaciones";
         TablaTokens tokensTable;
         Compilador compi;
         try {
@@ -15,7 +15,7 @@ public class Main {
             tokensTable = new TablaTokens( fileName + ".ordep");
             tokensTable.fillingTheTable();
             compi = new Compilador(tokensTable.getTokensTable());
-            compi.compilar(fileName, false);
+            compi.compilar(fileName, true);
         } catch(FileNotFoundException fNFE) {
             fNFE.printStackTrace();
         } catch (SyntaxException sE) {

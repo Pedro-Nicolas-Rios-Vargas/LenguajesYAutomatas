@@ -11,6 +11,7 @@ public class AsmMaker {
     private final BufferedWriter BF;
     private final String SALTO_LN;
     private final String PATH;
+    private final String GENERAL_INDENT;
 
     private LinkedList<String> stackAllocations;
     private LinkedList<String> extraAllocations;
@@ -24,6 +25,7 @@ public class AsmMaker {
             PATH = "D:\\masm\\compilador\\" + fileName + ".asm";
         BF = new BufferedWriter(new FileWriter(PATH));
         SALTO_LN = System.lineSeparator();
+        GENERAL_INDENT = "\t\t";
     }
 
     public void initBuildFile() {
@@ -54,7 +56,7 @@ public class AsmMaker {
             // TODO: Add here the code that can be in stack segment
             if (stackAllocations != null) {
                 while (!stackAllocations.isEmpty()) {
-                    addLine(stackAllocations.remove());
+                    addLine(GENERAL_INDENT + stackAllocations.remove());
                 }
             }
 
@@ -72,7 +74,7 @@ public class AsmMaker {
             // TODO: Add here the code that can be in extra segment
             if (extraAllocations != null) {
                 while (!extraAllocations.isEmpty()) {
-                    addLine(extraAllocations.remove());
+                    addLine(GENERAL_INDENT + extraAllocations.remove());
                 }
             }
 
@@ -90,7 +92,7 @@ public class AsmMaker {
             // TODO: Add here the code that can be in datos segment
             if (datosAllocations != null) {
                 while(!datosAllocations.isEmpty()) {
-                    addLine(datosAllocations.remove());
+                    addLine(GENERAL_INDENT + datosAllocations.remove());
                 }
             }
 
@@ -104,29 +106,29 @@ public class AsmMaker {
     private void buildCodigo() {
         try {
             addLine("codigo segment para public 'code'");
-            addLine("assume cs:codigo, ds:datos, es:extra, ss:pila");
-            addLine("public p0");
+            addLine(GENERAL_INDENT + "assume cs:codigo, ds:datos, es:extra, ss:pila");
+            addLine(GENERAL_INDENT + "public p0");
             addLine("p0 proc far");
-            addLine("push ds");
-            addLine("mov ax,0");
-            addLine("push ax");
-            addLine("mov ax, datos");
-            addLine("mov ds, ax");
-            addLine("mov ax, extra");
-            addLine("mov es, ax");
+            addLine(GENERAL_INDENT + "push ds");
+            addLine(GENERAL_INDENT + "mov ax,0");
+            addLine(GENERAL_INDENT + "push ax");
+            addLine(GENERAL_INDENT + "mov ax, datos");
+            addLine(GENERAL_INDENT + "mov ds, ax");
+            addLine(GENERAL_INDENT + "mov ax, extra");
+            addLine(GENERAL_INDENT + "mov es, ax");
 
             // TODO: Add here the code that can be in codigo segment
             // TODO: Receive strings that call the bBasic macros file
             if (codigoAllocations != null) {
                 while(!codigoAllocations.isEmpty()) {
-                    addLine(codigoAllocations.remove());
+                    addLine(GENERAL_INDENT + codigoAllocations.remove());
                 }
             }
 
-            addLine("ret");
+            addLine(GENERAL_INDENT + "ret");
             addLine("p0 endp");
             addLine("codigo ends");
-            addLine("end p0");
+            addLine(GENERAL_INDENT + "end p0");
 
         } catch(IOException ioE) {
             System.out.println("Error construyendo el segmento Codigo" + ioE.getMessage());
