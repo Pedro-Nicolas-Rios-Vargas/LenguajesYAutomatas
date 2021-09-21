@@ -13,6 +13,7 @@ public class LangKeyWords {
             "finsino",
             "hacer", //do
             "impri",
+            "impriln",
             "leer",
             "mientras",
             "para",
