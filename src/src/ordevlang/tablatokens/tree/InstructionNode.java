@@ -37,10 +37,10 @@ public class InstructionNode {
     }
 
     public void addInstruction(InstructionNode instruction) {
+        instruction.setParent(this);
         if (instructions == null) {
             instructions = instruction;
         } else {
-            instruction.setParent(this);
             instructions.addInstruction(instruction);
         }
     }
@@ -50,9 +50,10 @@ public class InstructionNode {
     }
 
     public void addLine(InstructionNode instructionLine) {
-        if (isBlock)
+        if (isBlock) {
+            instructionLine.setParent(this);
             lines.add(instructionLine);
-        else
+        } else
             System.out.println("This Instruction is not a Block");
     }
 

@@ -24,7 +24,8 @@ public class LangKeyWords {
 
     public static boolean isDataType(String token) {
         return token.equals("ent") || token.equals("float") ||
-                token.equals("doble") || token.equals("cadena");
+                token.equals("doble") || token.equals("cadena") ||
+                token.equals("booleano");
     }
 
     public static boolean isArithmeticOperator(char caracter) {
