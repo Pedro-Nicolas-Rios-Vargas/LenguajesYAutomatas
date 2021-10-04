@@ -57,6 +57,14 @@ public class InstructionNode {
             System.out.println("This Instruction is not a Block");
     }
 
+    public boolean hasMoreBlockLines() {
+        return lineIndex < lines.size();
+    }
+
+    public void resetIndex() {
+        lineIndex = 0;
+    }
+
     public InstructionNode getNextBlockLine() {
         if (isBlock) {
             InstructionNode line = (InstructionNode) lines.get(lineIndex);
@@ -66,6 +74,10 @@ public class InstructionNode {
             System.out.println("This Instruction is not a Block");
             return null;
         }
+    }
+
+    public boolean isABlock() {
+        return isBlock;
     }
 
     public Token getToken() {

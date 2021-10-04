@@ -40,10 +40,15 @@ public class TreeAnalyzer {
 
     public static void main(String[] args) {
         String[] codeLines = new String[] {
-                "1 ent s_a21",
-                "2 impri \"asdfasweq\"",
-                "3 leer s_a21",
-                "4 impriln s_a21"
+                "1 si 43 > 12 tons:",
+                "2 impri \"Hoal\"",
+                "3 si 13 == 43 tons:",
+                "4 impriln \"Si es igual\"",
+                "5 finsi",
+                "6 impriln \"Como andamios?\"",
+                "7 finsi",
+                "8 ent dasd12 := 43",
+                "9 impri dasd12"
         };
         LinkedList<Line> lines = new LinkedList<>();
         for (String rawLine : codeLines) {
@@ -54,10 +59,12 @@ public class TreeAnalyzer {
             for (Line line : lines) {
                 analyzer.analizeLine(line);
             }
+            LangTree arbol = analyzer.getLangTree();
+            arbol.buildTokensTable();
         } catch (SyntaxException sE) {
             System.out.println(sE.getMessage());
         }
-        System.out.println("Hoal");
+        analyzer.tree.printTablaTokens();
         /*
         Pattern p = Pattern.compile(
                 "(?<inst>leer)\\s(?<variable>([a-zA-Z][a-zA-Z\\d_]*))"
@@ -99,20 +106,22 @@ public class TreeAnalyzer {
             //lineNode = cadVarDeclaration(codeLine, numberLine);
         } else if ((lineNode = boolVarDeclaration(codeLine, numberLine)) != null) {
             //lineNode = boolVarDeclaration(codeLine, numberLine);
+        } else if ((lineNode = instLeerCall(codeLine, numberLine)) != null) {
+            //lineNode = instLeerCall(codeLine, numberLine)
         } else if ((lineNode = instImprCall(codeLine, numberLine)) != null) {
             //lineNode = instImprCall(codeLine, numberLine);
         } else if ((lineNode = varAssign(codeLine, numberLine)) != null) {
             //lineNode = varAssign(codeLine, numberLine);
         } else if ((lineNode = instSiCall(codeLine, numberLine)) != null) {
             //lineNode = instSiCall(codeLine, numberLine);
-            blockNode = lineNode;
+            //blockNode = lineNode;
             flagSiBlock = true;
         } else if ((lineNode = instFinSiCall(codeLine, numberLine)) != null) {
             //lineNode = instFinSiCall(codeLine, numberLine);
             flagFinSiInst = true;
         } else {
             throw new SyntaxException(String.format("Error en la línea: %d. " +
-                    "Error de sintaxis. Línea fuera del lenguaje.", numberLine).toString());
+                    "Error de sintaxis. Línea fuera del lenguaje.", numberLine));
         }
         if (flagInBlock) {
             if (flagSiBlock) {
@@ -133,6 +142,7 @@ public class TreeAnalyzer {
             if (flagSiBlock) {
                 flagInBlock = true;
                 blockCount++;
+                blockNode = lineNode;
             }
             tree.addLine(lineNode);
         }
@@ -164,7 +174,8 @@ public class TreeAnalyzer {
             if (tokens.peekLast() != null) { // Checks if the last token (assign) exist if it didn't the other tokens don't exist
                 tokens.add(tokenizingValue(lineNumber, tipo, null, valor1, var1));
                 tokens.add(tokenizingArithmeticOperator(oper));
-                tokens.add(tokenizingValue(lineNumber, tipo, null, valor2, var2));
+                if (tokens.peekLast() != null) // if opers was null the execution of eval second var is unnecessary
+                    tokens.add(tokenizingValue(lineNumber, tipo, null, valor2, var2));
             }
 
             InstructionNode instNode;
@@ -240,7 +251,8 @@ public class TreeAnalyzer {
             if (tokens.peekLast() != null) { // Checks if the last token (assign) exist if it didn't the other tokens don't exist
                 tokens.add(tokenizingValue(lineNumber, tipo, valor, valor1, var1));
                 tokens.add(tokenizingLogicOperator(opL));
-                tokens.add(tokenizingValue(lineNumber, tipo, null, valor2, var2));
+                if (tokens.peekLast() != null)
+                    tokens.add(tokenizingValue(lineNumber, tipo, null, valor2, var2));
             }
 
             InstructionNode instNode;
@@ -256,11 +268,34 @@ public class TreeAnalyzer {
         return null;
     }
 
-    private InstructionNode instLeerCall(String line, int lineNumber) {
+    private InstructionNode instLeerCall(String line, int lineNumber) throws SyntaxException {
         LinkedList<Token> tokens = new LinkedList<>();
         Pattern pattern = Pattern.compile(LANG_PATTERNS[3]);
         Matcher matchCodeLine = pattern.matcher(line);
         boolean isValid = matchCodeLine.matches();
+
+        if (isValid) {
+            String inst = matchCodeLine.group("inst");
+            String variable = matchCodeLine.group("variable");
+
+            tokens.add(tokenizingInstructionCall(inst));
+            if (tree.existTheVariable(variable)) {
+                Token varToken = tree.getVariableToken(variable);
+                tokens.add(varToken);
+            } else {
+                throw varDoesNotExist(lineNumber, variable);
+            }
+
+            InstructionNode instNode;
+            // The first element in the stack always are the type of the variable
+            instNode = new InstructionNode(null, tokens.remove());
+
+            for (Token token : tokens) {
+                if (token != null)
+                    instNode.addInstruction(new InstructionNode(null, token));
+            }
+            return instNode;
+        }
         return null;
     }
 
@@ -537,6 +572,10 @@ public class TreeAnalyzer {
             return new Token(opL, "opL", "-");
         }
         return null;
+    }
+
+    public LangTree getLangTree() {
+        return tree;
     }
 
     private SyntaxException varDoesNotExist(int lineNumber, String variable) {
