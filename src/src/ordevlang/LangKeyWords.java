@@ -22,6 +22,20 @@ public class LangKeyWords {
             "tons",
     };
 
+    public static String[] dataTypes = new String[] {
+            "cadena",
+            "ent",
+            "booleano"
+    };
+
+    public static String[] instructionKeyWords = new String[] {
+            "leer",
+            "impri",
+            "impriln",
+            "si",
+            "finsi"
+    };
+
     public static boolean isDataType(String token) {
         return token.equals("ent") || token.equals("float") ||
                 token.equals("doble") || token.equals("cadena") ||

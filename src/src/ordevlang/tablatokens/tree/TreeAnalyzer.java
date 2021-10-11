@@ -1,10 +1,15 @@
 package src.ordevlang.tablatokens.tree;
 
 import com.sun.source.tree.Tree;
+import src.datastructures.Queue;
+import src.ordevlang.tablatokens.FileHandler;
 import src.ordevlang.tablatokens.SyntaxException;
 import src.ordevlang.tablatokens.data.Line;
 import src.ordevlang.tablatokens.data.Token;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.OutputStreamWriter;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -14,18 +19,21 @@ public class TreeAnalyzer {
     private final LangTree tree;
     private InstructionNode blockNode;
     private final String[] LANG_PATTERNS;
-    private static String VARIABLE_PATTERN = "(?<variable>([a-zA-Z][a-zA-Z\\d_]*))";
-    private static String VALID_NUMBER_PATTERN = "(?<valor>(\\d{1,5}))";
-    private static String VALID_STRING_PATTERN = "(?<valor>\".+\")";
-    private static String ASSIGN_PATTERN = "([\\s]?)(?<assign>:=)([\\s]?)";
+    private final BufferedWriter BW;
+    private final String DEBUG_PATH;
+    private final Queue<Line> LINES;
     private int attrib, blockCount;
     private boolean flagInBlock;
 
-    public TreeAnalyzer() {
+    public TreeAnalyzer(String fileName) {
         blockCount = 0;
         attrib = 2;
         flagInBlock = false;
         tree = new LangTree();
+        BW = new BufferedWriter(new OutputStreamWriter(System.out));
+        DEBUG_PATH = System.getProperty("user.dir") + "\\Depurado\\";
+        LINES = FileHandler.readFile(new File(DEBUG_PATH + fileName));
+
         LANG_PATTERNS = new String[]{
                 "(?<tipo>ent)\\s(?<variable>([a-zA-Z][a-zA-Z\\d_]*))((([\\s]?)(?<assign>(:=))([\\s]?)((?<valor1>(\\d{1,5}))|(?<var1>([a-zA-Z][a-zA-Z\\d_]*)))([\\s]?)((?<oper>([+*/-]))([\\s]?)((?<valor2>(\\d{1,5}))|(?<var2>([a-zA-Z][a-zA-Z\\d_]*))))?))?",
                 "(?<tipo>cadena)\\s(?<variable>([a-zA-Z][a-zA-Z\\d_]*))((([\\s]?)(?<assign>(:=))([\\s]?)((?<valor1>\".+\")|(?<var1>([a-zA-Z][a-zA-Z\\d_]*)))))?",
@@ -38,7 +46,7 @@ public class TreeAnalyzer {
         };
     }
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         String[] codeLines = new String[] {
                 "1 si 43 > 12 tons:",
                 "2 impri \"Hoal\"",
@@ -65,32 +73,18 @@ public class TreeAnalyzer {
             System.out.println(sE.getMessage());
         }
         analyzer.tree.printTablaTokens();
-        /*
-        Pattern p = Pattern.compile(
-                "(?<inst>leer)\\s(?<variable>([a-zA-Z][a-zA-Z\\d_]*))"
-        );
-        Matcher m = p.matcher("leer asdf14_4");
-        boolean b = m.matches();
-        int groupCount = m.groupCount();
-        System.out.println(b);
-        if (b) {
-            System.out.println("Instruction: " + m.group("inst"));
-            //System.out.println("tipo: " + m.group("tipo"));
-            System.out.println("variable: " + m.group("variable"));
-            //System.out.println("assign: " + m.group("assign"));
-            //System.out.println("valor: " + m.group("valor"));
-            //System.out.println("valor1: " + m.group("valor1"));
-            //System.out.println("cad1: " + m.group("cad1"));
-            //System.out.println("var1: " + m.group("var1"));
-            //System.out.println("opL: " + m.group("opL"));
-            //System.out.println("oper: " + m.group("oper"));
-            //System.out.println("valor2: " + m.group("valor2"));
-            //System.out.println("cad2: " + m.group("cad2"));
-            //System.out.println("var2: " + m.group("var2"));
-            //System.out.println("Instruction 1: " + m.group("inst1"));
+    }*/
 
+    public void buildingAST() throws SyntaxException {
+        for (Line line : LINES) {
+            analizeLine(line);
         }
-        */
+    }
+
+    public LinkedList<Token> getTokensTable() {
+        tree.buildTokensTable();
+        tree.printTablaTokens();
+        return tree.getTokensTable();
     }
 
     public void analizeLine(Line line) throws SyntaxException {
@@ -313,7 +307,8 @@ public class TreeAnalyzer {
 
             tokens.add(tokenizingInstructionCall(inst));
             if (valor != null) {
-                tokens.add(new Token(valor, "numero", String.valueOf(attrib++)));
+                tokens.add(new Token(valor, "number", String.valueOf(attrib)));
+                attrib += 2;
             } else if (cad != null) {
                 tokens.add(new Token(cad, "literal", String.valueOf(attrib)));
                 attrib += 2;
@@ -426,7 +421,8 @@ public class TreeAnalyzer {
 
             tokens.add(tokenizingInstructionCall(inst));
             if (valor != null) {
-                tokens.add(new Token(valor, "bool", String.valueOf(attrib++)));
+                tokens.add(new Token(valor, "bool", String.valueOf(attrib)));
+                attrib += 2;
             } else {
                 tokens.add(tokenizingValue(lineNumber, "ent", null, valor1, var1));
                 tokens.add(tokenizingLogicOperator(opL));
@@ -471,7 +467,9 @@ public class TreeAnalyzer {
 
     private Token tokenizingVariable(int lineNumber, String variable) throws SyntaxException {
         if (!tree.existTheVariable(variable)) {
-            return new Token(variable, "Id", String.valueOf(attrib++));
+            Token token = new Token(variable, "Id", String.valueOf(attrib));
+            attrib += 2;
+            return token;
         } else {
             // Throws an exception because the variable all ready exist
             throw varAlreadyInUse(lineNumber, variable);
@@ -487,15 +485,16 @@ public class TreeAnalyzer {
 
     private Token tokenizingValue(int lineNumber, String tipo, String valor, String valor1, String var) throws SyntaxException {
         if (valor != null) {
-            return new Token(valor, "bool", String.valueOf(attrib++));
+            Token token = new Token(valor, "bool", String.valueOf(attrib));
+            attrib += 2;
+            return token;
         } else if (valor1 != null) {
             String tokensillo = "";
-            int incrementoAttrib = 1;
+            int incrementoAttrib = 2;
             if (tipo.equals("ent")) {
                 tokensillo = "numero";
             } else if (tipo.equals("cadena")) {
                 tokensillo = "literal";
-                incrementoAttrib = 2;
             } else if (tipo.equals("booleano")) {
                 tokensillo = "bool";
             }
@@ -521,9 +520,13 @@ public class TreeAnalyzer {
         if (valor != null) {
             if (tipo.equals("ent") || tipo.equals("booleano")) {
                 if (tipo.equals("ent")) {
-                    return new Token(valor, "numero", String.valueOf(attrib++));
+                    Token token =  new Token(valor, "numero", String.valueOf(attrib));
+                    attrib += 2;
+                    return token;
                 } else {
-                    return new Token(valor, "bool", String.valueOf(attrib++));
+                    Token token = new Token(valor, "booleano", String.valueOf(attrib));
+                    attrib += 2;
+                    return token;
                 }
             } else {
                 throw valueDifferType(lineNumber, tipo);
