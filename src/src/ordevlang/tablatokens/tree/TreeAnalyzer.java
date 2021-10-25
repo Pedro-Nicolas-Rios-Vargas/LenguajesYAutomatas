@@ -42,7 +42,10 @@ public class TreeAnalyzer {
                 "(?<inst>(impri(ln)?))\\s((?<valor>(\\d{1,5}))|(?<cad>(\".+\"))|(?<variable>([a-zA-Z][a-zA-Z\\d_]*)))",
                 "(?<variable>([a-zA-Z][a-zA-Z\\d_]*))([\\s]?)(?<assign>(:=))([\\s]?)((?<valor1>(\\d{1,5}))|(?<cad1>(\".+\"))|(?<var1>([a-zA-Z][a-zA-Z\\d_]*)))(([\\s]?)((?<oper>([+*/-]))|(?<opL>(([><][=]?)|([!=]=))))([\\s]?)((?<valor2>(\\d{1,5}))|(?<cad2>(\".+\"))|(?<var2>([a-zA-Z][a-zA-Z\\d_]*))))?",
                 "(?<inst>si)\\s((?<valor>([01]))|(((?<valor1>(\\d{1,5}))|(?<var1>([a-zA-Z][a-zA-Z\\d_]*)))([\\s]?)(?<opL>(([><][=]?)|([!=]=)))([\\s]?)((?<valor2>(\\d{1,5}))|(?<var2>([a-zA-Z][a-zA-Z\\d_]*)))))\\s(?<inst1>tons:)",
-                "(?<inst>finsi)"
+                "(?<inst>finsi)",
+                "(?<inst>para)\\s(?<variable>([a-zA-Z][a-zA-Z\\d_]*));([\\s]?)\\k<variable>([\\s]?)(?<opL>(([><][=]?)|([!=]=)))([\\s]?)(?<valor>(\\d{1,5}));([\\s]?)\\k<variable>(?<modi>[+]{2}|[-]{2}):",
+                "(?<inst>finpara)"
+
         };
     }
 
@@ -89,8 +92,8 @@ public class TreeAnalyzer {
 
     public void analizeLine(Line line) throws SyntaxException {
         InstructionNode lineNode;
-        boolean flagSiBlock = false;
-        boolean flagFinSiInst = false;
+        boolean flagNewBlock = false;
+        boolean flagEndBlock = false;
         String codeLine = line.getCode();
         int numberLine = line.getLineNumber();
 
@@ -109,20 +112,26 @@ public class TreeAnalyzer {
         } else if ((lineNode = instSiCall(codeLine, numberLine)) != null) {
             //lineNode = instSiCall(codeLine, numberLine);
             //blockNode = lineNode;
-            flagSiBlock = true;
+            flagNewBlock = true;
         } else if ((lineNode = instFinSiCall(codeLine, numberLine)) != null) {
             //lineNode = instFinSiCall(codeLine, numberLine);
-            flagFinSiInst = true;
+            flagEndBlock = true;
+        } else if ((lineNode = instParaCall(codeLine, numberLine)) != null) {
+            // Is a for loop
+            flagNewBlock = true;
+        } else if ((lineNode = instFinParaCall(codeLine, numberLine)) != null) {
+            // Is the end of a for loop
+            flagEndBlock = true;
         } else {
             throw new SyntaxException(String.format("Error en la línea: %d. " +
                     "Error de sintaxis. Línea fuera del lenguaje.", numberLine));
         }
         if (flagInBlock) {
-            if (flagSiBlock) {
+            if (flagNewBlock) {
                 blockCount++;
                 blockNode.addLine(lineNode);
                 blockNode = lineNode;
-            } else if (flagFinSiInst) {
+            } else if (flagEndBlock) {
                 blockCount--;
                 blockNode.addLine(lineNode);
                 if (blockCount == 0) {
@@ -133,7 +142,7 @@ public class TreeAnalyzer {
             } else
                 blockNode.addLine(lineNode);
         } else {
-            if (flagSiBlock) {
+            if (flagNewBlock) {
                 flagInBlock = true;
                 blockCount++;
                 blockNode = lineNode;
@@ -457,6 +466,70 @@ public class TreeAnalyzer {
         return null;
     }
 
+    private InstructionNode instParaCall(String line, int lineNumber) throws SyntaxException {
+        LinkedList<Token> tokens = new LinkedList<>();
+        Pattern pattern = Pattern.compile(LANG_PATTERNS[8]);
+        Matcher matchCodeLine = pattern.matcher(line);
+        boolean isValid = matchCodeLine.matches();
+
+        if (isValid) {
+            String inst = matchCodeLine.group("inst");
+            String variable = matchCodeLine.group("variable");
+            String operador = matchCodeLine.group("opL");
+            String valor = matchCodeLine.group("valor");
+            String modificador = matchCodeLine.group("modi");
+
+            tokens.add(tokenizingInstructionCall(inst));
+            if (tree.existTheVariable(variable)) {
+                Token varRef = tree.getVariableToken(variable);
+                String tipo = tree.getVariableTypeToken(variable).getLexema();
+
+                if (tipo.equals("ent")) {
+                    if (tree.isTheVariableInitialized(tipo, variable)) {
+                        tokens.add(varRef);
+                        tokens.add(tokenizingLogicOperator(operador));
+                        tokens.add(tokenizingValueAssign(lineNumber, tipo, valor, null, null));
+                        //tokens.add(varRef); // Unnecessary addition
+                        tokens.add(tokenizingArithmeticOperator(modificador));
+                    } else {
+                        throw varNotInitialized(lineNumber, variable);
+                    }
+                } else {
+                    throw varsDifferentType(lineNumber, variable);
+                }
+
+            } else {
+                throw varDoesNotExist(lineNumber, variable);
+            }
+
+            InstructionNode instNode;
+            instNode = new InstructionNode(null, tokens.remove(), true);
+
+            for(Token token : tokens) {
+                if (token != null) {
+                    instNode.addInstruction(new InstructionNode(null, token));
+                }
+            }
+            return instNode;
+
+        }
+        return null;
+    }
+
+    private InstructionNode instFinParaCall(String line, int lineNumber) {
+        Pattern pattern = Pattern.compile(LANG_PATTERNS[9]);
+        Matcher matchCodeLine = pattern.matcher(line);
+        boolean isValid = matchCodeLine.matches();
+
+        if (isValid) {
+            String inst = matchCodeLine.group("inst");
+            Token instruction = tokenizingInstructionCall(inst);
+
+            return new InstructionNode(null, instruction);
+        }
+        return null;
+    }
+
     private Token tokenizingType(String tipo) {
         return new Token(tipo, tipo, "-");
     }
@@ -492,7 +565,7 @@ public class TreeAnalyzer {
             String tokensillo = "";
             int incrementoAttrib = 2;
             if (tipo.equals("ent")) {
-                tokensillo = "numero";
+                tokensillo = "number";
             } else if (tipo.equals("cadena")) {
                 tokensillo = "literal";
             } else if (tipo.equals("booleano")) {
@@ -520,7 +593,7 @@ public class TreeAnalyzer {
         if (valor != null) {
             if (tipo.equals("ent") || tipo.equals("booleano")) {
                 if (tipo.equals("ent")) {
-                    Token token =  new Token(valor, "numero", String.valueOf(attrib));
+                    Token token =  new Token(valor, "number", String.valueOf(attrib));
                     attrib += 2;
                     return token;
                 } else {

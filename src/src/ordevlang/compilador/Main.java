@@ -8,7 +8,7 @@ import java.io.FileNotFoundException;
 
 public class Main {
     public static void main(String[] args) {
-        String fileName = "ysisi";
+        String fileName = "paralop";
         TreeAnalyzer analyzer;
         Compilador compi;
         try {

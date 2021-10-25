@@ -1,7 +1,6 @@
 package src.ordevlang.compilador;
 
 import src.ordevlang.LangKeyWords;
-import src.ordevlang.compilador.AsmMaker;
 import src.ordevlang.tablatokens.data.Token;
 
 import java.io.IOException;
@@ -15,9 +14,11 @@ public class Compilador {
     private final LinkedList<String> DATA_VARIABLES;
     private final LinkedList<String> CODE_LINES;
     private final LinkedList<Variable> DECLARED_VARIABLES;
-    private final LinkedList<String[]> SI_BLOCK_FLAGS;
+    private final LinkedList<String[]> BLOCK_FLAGS;
+    private final LinkedList<String[]> FOR_LOOP_ELEMENTS;
     private Variable varDeclared, assignVar;
     private boolean flagNewLine;
+    private boolean flagInitialization;
     private int printCount, siFlagCount;
     private String line, directive, space;
 
@@ -29,16 +30,18 @@ public class Compilador {
         this.printCount = 1;
         this.siFlagCount = 0;
 
+        this.FOR_LOOP_ELEMENTS = new LinkedList<>();
         this.STACK_VARIABLES = new LinkedList<>();
         this.EXTRA_VARIABLES = new LinkedList<>();
         this.DATA_VARIABLES = new LinkedList<>();
         this.CODE_LINES = new LinkedList<>();
         this.DECLARED_VARIABLES = new LinkedList<>();
-        this.SI_BLOCK_FLAGS = new LinkedList<>();
+        this.BLOCK_FLAGS = new LinkedList<>();
         this.varDeclared = null;
         this.assignVar = null;
 
         this.flagNewLine = false;
+        this.flagInitialization = false;
     }
 
     public void compilar(String fileName, boolean inTest) {
@@ -102,8 +105,12 @@ public class Compilador {
         } else if (tokenType.equals("si")) {
             defineSiBlock(lineTokens);
         } else if (tokenType.equals("finsi")) {
-            String[] flags = SI_BLOCK_FLAGS.removeLast();
+            String[] flags = BLOCK_FLAGS.removeLast();
             CODE_LINES.add(flags[1] + ":"); // GralBlockFlag
+        } else if (tokenType.equals("para")) {
+            defineForLoop(lineTokens);
+        } else if (tokenType.equals("finpara")) {
+            defineForLoopEnd();
         }
     }
 
@@ -149,6 +156,7 @@ public class Compilador {
                  addVarToDataList();
              } */
         } else if (numberOfTokens == 4) {
+            flagInitialization = true;
             tokenCount += 2; // Passing the assign token (assign : 2) value : 3
             Token assignValue = lineTokens.get(tokenCount); // Get the token of value to assign in the variable (variableName)
             lexema = assignValue.getLexema();
@@ -252,6 +260,9 @@ public class Compilador {
         } else if (tokenType.equals("Id")) {
             line = "imp_var ";
             varDeclared = findVar(lexema);
+            if (varDeclared.getType().equals("ent")) {
+                line = "imp_varEnt ";
+            }
         }
 
         assert varDeclared != null;
@@ -259,7 +270,8 @@ public class Compilador {
         CODE_LINES.add(line);
 
         if (flagNewLine) {
-            moveCursor();
+            CODE_LINES.add("imp_newLine");
+            //moveCursor();
             flagNewLine = false;
         }
 
@@ -269,7 +281,7 @@ public class Compilador {
     private void defineSiBlock(LinkedList<Token> lineTokens) {
         flagsGenerator(); // cause the first token was the si instruction
         String lexema, sisiFlag, sinoFlag;
-        String[] flags = SI_BLOCK_FLAGS.peekLast();
+        String[] flags = BLOCK_FLAGS.peekLast();
         assert flags != null;
         sisiFlag = flags[0];
         sinoFlag = flags[1];
@@ -326,12 +338,99 @@ public class Compilador {
         CODE_LINES.add(sisiFlag + ":");
     }
 
+    private void defineForLoop(LinkedList<Token> lineTokens) {
+        flagsGenerator();
+        String operationLex, ctnLoop, endLoop, acceptLoop;
+        String[] flags = BLOCK_FLAGS.peekLast();
+        Token iteratorVar, opL, value, modificator;
+        Variable iterationVariable, modificatorValue;
+        assert flags != null;
+        ctnLoop = flags[0];
+        endLoop = flags[1];
+        acceptLoop = "f" + (siFlagCount + 1);
+        siFlagCount += 1;
+        int tokenCount = 1;
+
+        iteratorVar = lineTokens.get(tokenCount++);
+        opL = lineTokens.get(tokenCount++);
+        value = lineTokens.get(tokenCount++);
+        modificator = lineTokens.get(tokenCount);
+        iterationVariable = variableOfOperation(iteratorVar);
+        modificatorValue = variableOfOperation(value);
+
+        operationLex = getOperationLex(opL);
+
+        //CODE_LINES.add(String.format("conv_Hex %s, cx", iterationVariable.getVarID()));
+        //CODE_LINES.add(String.format("mov dl, [%s]", modificatorValue.getVarID()));
+        //CODE_LINES.add("mov dh, 0");
+        CODE_LINES.add("push dx");
+        CODE_LINES.add(ctnLoop + ":");
+        CODE_LINES.add(String.format("mov dl, [%s]", modificatorValue.getVarID()));
+        CODE_LINES.add(String.format("cmp [%s], dl", iterationVariable.getVarID()));
+        CODE_LINES.add(String.format("%s %s", operationLex, acceptLoop));
+        CODE_LINES.add(String.format("jmp %s", endLoop));
+        CODE_LINES.add(String.format("%s:", acceptLoop));
+
+        String[] neededAtEndLoop = {
+                iterationVariable.getVarID(),
+                modificator.getLexema()
+        };
+        FOR_LOOP_ELEMENTS.add(neededAtEndLoop);
+    }
+
+    private void defineForLoopEnd() {
+        String varID, modificador;
+        String[] forElements = FOR_LOOP_ELEMENTS.removeLast();
+        varID = forElements[0];
+        modificador = forElements[1];
+        String[] flags = BLOCK_FLAGS.removeLast();
+
+        if (modificador.equals("++")) {
+            CODE_LINES.add(String.format("INC BYTE PTR [%s]", varID));
+        } else if (modificador.equals("--")) {
+            CODE_LINES.add(String.format("DEC BYTE PTR [%s]", varID));
+        }
+        CODE_LINES.add(String.format("jmp %s", flags[0]));
+        CODE_LINES.add(String.format("%s:", flags[1]));
+        CODE_LINES.add("pop dx");
+    }
+
+    private String getOperationLex(Token opL) {
+        String operationLex = "";
+        String lexema = opL.getLexema();
+        switch (lexema) {
+            case "<":
+                operationLex = "jl";
+                break;
+            case "<=":
+                operationLex = "jle";
+                break;
+            case ">":
+                operationLex = "jg";
+                break;
+            case ">=":
+                operationLex = "jge";
+                break;
+            case "==":
+                operationLex = "je";
+                break;
+            case "!=":
+                operationLex = "jne";
+                break;
+        }
+        return operationLex;
+    }
+
     private String generateVarID(String attrib) {
         return "v" + attrib;
     }
 
     private void addVarToDataList() {
-        line += space;
+        if (!flagInitialization) {
+            line += space;
+        } else {
+            flagInitialization = false;
+        }
         DATA_VARIABLES.add(line);
         DECLARED_VARIABLES.add(varDeclared);
         varDeclared = null;
@@ -349,9 +448,9 @@ public class Compilador {
             varDeclared = new Variable(varType);
             varID = generateVarID(attrib);
             directive = " db ";
-            StringBuilder sb = new StringBuilder(lexema);
-            sb.insert(sb.length() - 1, '$');
-            space = sb.toString();
+            //StringBuilder sb = new StringBuilder(lexema);
+            //sb.insert(sb.length() - 1, '$');
+            space = lexema; //sb.toString();
             varDeclared.setVarID(varID);
             varDeclared.setDirective(directive);
             variable = varDeclared;
@@ -417,13 +516,13 @@ public class Compilador {
     }
 
     private void flagsGenerator() {
-        String flagSiBlock = "f" + siFlagCount + 1;
-        String flagGralBlock = "f" + siFlagCount + 2;
+        String flagSiBlock = "f" + (siFlagCount + 1);
+        String flagGralBlock = "f" + (siFlagCount + 2);
         String[] flags = new String[] {
                 flagSiBlock,
                 flagGralBlock
         };
-        SI_BLOCK_FLAGS.add(flags);
+        BLOCK_FLAGS.add(flags);
         siFlagCount += 2;
     }
 
